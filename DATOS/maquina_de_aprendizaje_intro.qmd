@@ -1,0 +1,149 @@
+---
+title: "Maquina de aprendizaje Intro"
+author: "ALEXIS LANCHIMBA"
+format: html
+editor: visual
+---
+
+# Método de particion de datos para una máquina de aprendizaje
+
+```{r DATOS, echo=FALSE}
+setwd("C:/Users/alexi/OneDrive/Escritorio/CIENCIA DE DATOS/MODULO 5/1/Machine-Learning-2/DATOS")
+
+library(readxl)
+
+dataorig <- read_xlsx("base_autos2.xlsx")
+head(dataorig,6)
+summary(dataorig)
+
+n = length(dataorig$tipo)
+```
+
+`table()`: Tabula una variable de referencia. `prop.table()`: Tabula una variable de referencia en porcentajes.
+
+```{r}
+#| label: Tabular una variable de refenrencia
+
+table(dataorig$tipo)
+
+prop.table(table(dataorig$tipo))
+
+```
+
+## Establece semilla
+
+`rnorm()`: Genera números aleatorios de una distribución normal.
+
+`set.seed()`: Establece una semilla para la generación de números aleatorios. (una vez fijado la semilla aparece lo mismo)
+
+```{r semilla, echo=TRUE}
+rnorm(5)
+
+#Establecer semilla
+
+set.seed(123)
+rnorm(5)
+```
+
+## Crear identificador
+
+`sample()`: Genera una muestra aleatoria de un tamaño dado a partir de una secuencia de números. `1:n` es una secuencia de números del 1 al n., `n` es el tamaño de la muestra, `replace = FALSE` indica que no se pueden repetir los números.
+
+`View()`: Muestra los datos en una tabla.
+
+`arrange()`: Ordena los datos de acuerdo a una variable de referencia.
+
+```{r identificador, echo=TRUE}
+
+dataorig$idm <- sample(1:n,n, replace = FALSE)
+View(dataorig)
+
+library(dplyr)
+
+dataorig_ord <- dataorig |> arrange(idm)
+
+View(dataorig_ord)
+```
+
+Filtrar el 80% de los datos para entrenamiento y el 20% para test (prueba).
+
+# METODO DE PARICION DE DATOS CON IDENTIFICADOR CON NUMEROS ALEATORIOS
+
+```{r filtrar, echo = TRUE}
+obs80 = round(n*0.80, 0)
+View(obs80)
+
+# Grupo de entrenamiento datos_trin1
+
+
+datos_train1 <- dataorig_ord |> filter(idm <= obs80)
+View(datos_train1)
+
+n_train1 <- length(datos_train1$tipo)
+n_train1
+
+# Fitrar el 20% restante de grupo de pureba o test
+
+datos_test1 <- dataorig_ord |> filter(idm > obs80)
+
+View(datos_test1)
+n_test1 <- length(datos_test1$tipo)
+n_test1
+
+# Verificar que sume el 100% de los datos
+
+n_train1 + n_test1
+
+n == n_train1 + n_test1
+
+prop.table(table(datos_train1$tipo))
+
+prop.table(table(datos_test1$tipo))
+```
+
+# METODO DE PARTICION DE DATOS: teorico
+
+Filtrar el 80% para datos de entrenamiento y el 20 % de prueba, mediante cirterio teorico
+
+```{r teorico, echo = TRUE}
+quantile(dataorig_ord$precio, 0.80)
+
+# Grupo de entrenamiento datos_trin2
+
+
+datos_train2 <- dataorig_ord |> filter(precio <= 36.112)
+View(datos_train2)
+ 
+n_train2 <- length(datos_train2$precio)
+# Grupo de prueba
+
+datos_test2 <- dataorig_ord |> filter(precio > 36.112)
+View(datos_test2)
+
+n_test2 <- length(datos_test2$precio)
+# Verifica que se hayan incluido el 100% de los datos.
+
+n == n_train2 + n_test2
+
+
+#Con cualquier variable la proporcion debe ser igual
+prop.table(table(datos_train2$tipo))
+
+prop.table(table(datos_test2$tipo))
+```
+
+# METODO DE PARTICION DE DATOS: libreria caret
+
+```{r caret, echo = TRUE}
+
+library(caret)
+library(ggplot2)
+library(lattice)
+
+set.seed(123)
+
+datos_train3 <- createDataPartition(y = dataorig$tipo, p = 0.80, list = FALSE, times =  1)
+
+datos_train3 <- dataorig[train, ]    # Data de entrenamiento
+datos_test3  <- dataorig[-datos_train3, ]   # Data de prueba
+```
